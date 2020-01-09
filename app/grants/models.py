@@ -284,7 +284,7 @@ class Grant(SuperModel):
             for contrib in contribs:
                 #add all contributions
                 key = contrib.created_on.strftime("%Y/%m")
-                subkey = 'One-Time' 
+                subkey = 'One-Time'
                 if int(contrib.subscription.num_tx_approved) > 1:
                     if contrib.is_first_in_sequence:
                         subkey = 'New-Recurring'
@@ -421,6 +421,14 @@ class Subscription(SuperModel):
     active = models.BooleanField(default=True, help_text=_('Whether or not the Subscription is active.'))
     error = models.BooleanField(default=False, help_text=_('Whether or not the Subscription is erroring out.'))
     subminer_comments = models.TextField(default='', blank=True, help_text=_('Comments left by the subminer.'))
+
+    split_tx_id = models.CharField(
+        default='',
+        max_length=255,
+        help_text=_('The tx id of the split transfer'),
+        blank=True,
+    )
+    split_tx_confirmed = models.BooleanField(default=True, help_text=_('Whether or not the split tx succeeded.'))
 
     subscription_hash = models.CharField(
         default='',
@@ -789,6 +797,11 @@ next_valid_timestamp: {next_valid_timestamp}
         return result
 
 
+    def save_split_tx_to_contribution(self):
+        self.subscription_contribution[0].split_tx_id = self.split_tx_id
+        self.subscription_contribution[0].split_tx_confirmed = self.split_tx_confirmed
+        self.subscription_contribution[0].save()
+
     def successful_contribution(self, tx_id):
         """Create a contribution object."""
         from marketing.mails import successful_contribution
@@ -797,7 +810,9 @@ next_valid_timestamp: {next_valid_timestamp}
         self.num_tx_processed += 1
         contribution_kwargs = {
             'tx_id': tx_id,
-            'subscription': self
+            'subscription': self,
+            'split_tx_id': self.split_tx_id,
+            'split_tx_confirmed': self.split_tx_confirmed
         }
         contribution = Contribution.objects.create(**contribution_kwargs)
         grant = self.grant
@@ -942,6 +957,13 @@ class Contribution(SuperModel):
         default='0x0',
         help_text=_('The transaction ID of the Contribution.'),
     )
+    split_tx_id = models.CharField(
+        default='',
+        max_length=255,
+        help_text=_('The tx id of the split transfer'),
+        blank=True,
+    )
+    split_tx_confirmed = models.BooleanField(default=True, help_text=_('Whether or not the split tx succeeded.'))
     subscription = models.ForeignKey(
         'grants.Subscription',
         related_name='subscription_contribution',

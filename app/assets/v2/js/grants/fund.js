@@ -398,6 +398,34 @@ const saveSubscription = (data, isOneTimePayment) => {
   });
 };
 
+const saveSplitTx = (data, splitTxID, confirmed) => {
+  if (splitTxID) {
+    data['split_tx_id'] = splitTxID;
+  }
+
+  if (confirmed) {
+      data['split_tx_confirmed'] = true;
+  }
+
+  $.ajax({
+    type: 'post',
+    url: '',
+    data: data,
+    success: json => {
+      console.log('successfully saved subscription');
+      if (json.url != undefined) {
+        redirectURL = json.url;
+        $('#wait').val('false');
+      }
+    },
+    error: (error) => {
+      console.log(error);
+      _alert({ message: gettext('Your subscription failed to save. Please try again.') }, 'error');
+      redirectURL = window.location;
+    }
+  });
+}
+
 const splitPayment = (account, toFirst, toSecond, valueFirst, valueSecond) => {
   var data = {};
   var form = $('#js-fundGrant');
@@ -419,6 +447,8 @@ const splitPayment = (account, toFirst, toSecond, valueFirst, valueSecond) => {
     console.log('1', error);
     _alert({ message: gettext('Your payment transaction failed. Please try again.')}, 'error');
   }).on('transactionHash', function(transactionHash) {
+    saveSplitTX(data, transactionHash, false);
+
     waitforData(() => {
       document.suppress_loading_leave_code = true;
       window.location = redirectURL;
@@ -441,6 +471,7 @@ const splitPayment = (account, toFirst, toSecond, valueFirst, valueSecond) => {
     };
     console.log('confirmed!');
     saveSubscription(data, true);
+    saveSplitTX(data, false, true);
   });
 };
 
