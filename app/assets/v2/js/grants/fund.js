@@ -404,7 +404,7 @@ const saveSplitTx = (data, splitTxID, confirmed) => {
   }
 
   if (confirmed) {
-      data['split_tx_confirmed'] = true;
+    data['split_tx_confirmed'] = true;
   }
 
   $.ajax({
@@ -447,7 +447,13 @@ const splitPayment = (account, toFirst, toSecond, valueFirst, valueSecond) => {
     console.log('1', error);
     _alert({ message: gettext('Your payment transaction failed. Please try again.')}, 'error');
   }).on('transactionHash', function(transactionHash) {
-    saveSplitTX(data, transactionHash, false);
+    data = {
+      'subscription_hash': 'onetime',
+      'signature': 'onetime',
+      'csrfmiddlewaretoken': $("#js-fundGrant input[name='csrfmiddlewaretoken']").val(),
+      'sub_new_approve_tx_id': $('#sub_new_approve_tx_id').val()
+    };
+    saveSplitTx(data, transactionHash, false);
 
     waitforData(() => {
       document.suppress_loading_leave_code = true;
@@ -471,7 +477,7 @@ const splitPayment = (account, toFirst, toSecond, valueFirst, valueSecond) => {
     };
     console.log('confirmed!');
     saveSubscription(data, true);
-    saveSplitTX(data, false, true);
+    saveSplitTx(data, false, true);
   });
 };
 

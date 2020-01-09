@@ -428,7 +428,7 @@ class Subscription(SuperModel):
         help_text=_('The tx id of the split transfer'),
         blank=True,
     )
-    split_tx_confirmed = models.BooleanField(default=True, help_text=_('Whether or not the split tx succeeded.'))
+    split_tx_confirmed = models.BooleanField(default=False, help_text=_('Whether or not the split tx succeeded.'))
 
     subscription_hash = models.CharField(
         default='',
@@ -798,9 +798,10 @@ next_valid_timestamp: {next_valid_timestamp}
 
 
     def save_split_tx_to_contribution(self):
-        self.subscription_contribution[0].split_tx_id = self.split_tx_id
-        self.subscription_contribution[0].split_tx_confirmed = self.split_tx_confirmed
-        self.subscription_contribution[0].save()
+        sc = self.subscription_contribution.first()
+        sc.split_tx_id = self.split_tx_id
+        sc.split_tx_confirmed = self.split_tx_confirmed
+        sc.save()
 
     def successful_contribution(self, tx_id):
         """Create a contribution object."""
@@ -963,7 +964,7 @@ class Contribution(SuperModel):
         help_text=_('The tx id of the split transfer'),
         blank=True,
     )
-    split_tx_confirmed = models.BooleanField(default=True, help_text=_('Whether or not the split tx succeeded.'))
+    split_tx_confirmed = models.BooleanField(default=False, help_text=_('Whether or not the split tx succeeded.'))
     subscription = models.ForeignKey(
         'grants.Subscription',
         related_name='subscription_contribution',
